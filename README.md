@@ -109,7 +109,7 @@ Contact
 If you have any Questions, Comments, Bug reports or feature requests for this plugin, 
 or you wish to contact me you can:
 
-email me - cedric.neukirchen@gmx.de
+email me - 
 
 contact me on the forum - Username: eXi
 
