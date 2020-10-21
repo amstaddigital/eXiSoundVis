@@ -1,18 +1,17 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AudioDecompressWorker.h"
-#include "eXiSoundVisPrivatePCH.h"
 
 #include "SoundVisComponent.h"
 
 #include "AudioDevice.h"
 #include "Developer/TargetPlatform/Public/Interfaces/IAudioFormat.h"
 
-FAudioDecompressWorker* FAudioDecompressWorker::Runnable = NULL;
+FAudioDecompressWorker* FAudioDecompressWorker::Runnable = nullptr;
 int32 FAudioDecompressWorker::ThreadCounter = 0;
 
 FAudioDecompressWorker::FAudioDecompressWorker(class USoundWave* InSoundWaveRef)
-	: Thread(NULL)
+	: Thread(nullptr)
 	, SoundWaveRef(InSoundWaveRef)
 {
 	//, AudioInfo(NULL)
@@ -32,7 +31,7 @@ FAudioDecompressWorker::FAudioDecompressWorker(class USoundWave* InSoundWaveRef)
 FAudioDecompressWorker::~FAudioDecompressWorker()
 {
 	delete Thread;
-	Thread = NULL;
+	Thread = nullptr;
 }
 
 FAudioDecompressWorker* FAudioDecompressWorker::InitializeWorker(class USoundWave* InSoundWaveRef)
@@ -48,7 +47,7 @@ void FAudioDecompressWorker::ShutdownWorker()
 	{
 		Runnable->EnsureCompletion();
 		delete Runnable;
-		Runnable = NULL;
+		Runnable = nullptr;
 	}
 }
 
@@ -67,7 +66,7 @@ uint32 FAudioDecompressWorker::Run()
 		return 0;
 	}
 
-	if (AudioInfo != NULL)
+	if (AudioInfo != nullptr)
 	{
 		FSoundQualityInfo QualityInfo = { 0 };
 
@@ -123,7 +122,7 @@ void FAudioDecompressWorker::EnsureCompletion()
 {
 	Stop();
 
-	if (Thread != NULL) {
+	if (Thread != nullptr) {
 
 		Thread->WaitForCompletion();
 	}		

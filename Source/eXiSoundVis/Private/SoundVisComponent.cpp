@@ -3,12 +3,17 @@
 
 #include "SoundVisComponent.h"
 
-#include "eXiSoundVisPrivatePCH.h"
+// KISS Headers, that we need for the decompression part
+#include "ThirdParty/Kiss_FFT/kiss_fft129/kiss_fft.h"
+#include "ThirdParty/Kiss_FFT/kiss_fft129/tools/kiss_fftnd.h"
+
 
 #include "Sound/SoundWave.h"
 #include "AudioDevice.h"
+#include "eXiSoundVis.h"
 #include "Runtime/Engine/Public/VorbisAudioInfo.h"
 #include "Developer/TargetPlatform/Public/Interfaces/IAudioFormat.h"
+#include "Misc/LocalTimestampDirectoryVisitor.h"
 
 /// De-/Constructors
 
@@ -54,14 +59,11 @@ void USoundVisComponent::LoadSoundFileFromHD(const FString& InFilePath)
 		return;
 	}
 
-	// If true, the Sound was successfully loaded
-	bool bLoaded = false;
-
 	// TArray that holds the binary and encoded Sound data
 	TArray<uint8> RawFile;
 
 	// Load file into RawFile Array
-	bLoaded = FFileHelper::LoadFileToArray(RawFile, InFilePath.GetCharArray().GetData());
+	bool bLoaded = FFileHelper::LoadFileToArray(RawFile, InFilePath.GetCharArray().GetData());
 
 	if (bLoaded)
 	{
@@ -142,7 +144,7 @@ void USoundVisComponent::GetPCMDataFromFile(USoundWave* InSoundWave)
 	if (GEngine)
 	{
 		// Get a Pointer to the Main Audio Device
-		FAudioDeviceHandle DeviceHandle = GEngine->GetMainAudioDevice();
+		const FAudioDeviceHandle DeviceHandle = GEngine->GetMainAudioDevice();
 
 		FAudioDevice* AudioDevice = nullptr;
 		if (DeviceHandle.IsValid())
@@ -232,8 +234,8 @@ void USoundVisComponent::CalculateFrequencySpectrum(USoundWave* InSoundWaveRef, 
 			// Allocate space in the Buffer and Output Arrays for all the data that FFT returns
 			for (int32 ChannelIndex = 0; ChannelIndex < NumChannels; ChannelIndex++)
 			{
-				Buffer[ChannelIndex] = (kiss_fft_cpx*)KISS_FFT_MALLOC(sizeof(kiss_fft_cpx) * SamplesToRead);
-				Output[ChannelIndex] = (kiss_fft_cpx*)KISS_FFT_MALLOC(sizeof(kiss_fft_cpx) * SamplesToRead);
+				Buffer[ChannelIndex] = static_cast<kiss_fft_cpx*>(KISS_FFT_MALLOC(sizeof(kiss_fft_cpx) * SamplesToRead));
+				Output[ChannelIndex] = static_cast<kiss_fft_cpx*>(KISS_FFT_MALLOC(sizeof(kiss_fft_cpx) * SamplesToRead));
 			}
 
 			// Shift our SamplePointer to the Current "FirstSample"
@@ -244,7 +246,7 @@ void USoundVisComponent::CalculateFrequencySpectrum(USoundWave* InSoundWaveRef, 
 				for (int32 ChannelIndex = 0; ChannelIndex < NumChannels; ChannelIndex++)
 				{
 					// Make sure the Point is Valid and we don't go out of bounds
-					if (SamplePtr != NULL && (SampleIndex + FirstSample < SampleCount))
+					if (SamplePtr != nullptr && (SampleIndex + FirstSample < SampleCount))
 					{
 						// Use Window function to get a better result for the Data (Hann Window)
 						Buffer[ChannelIndex][SampleIndex].r = GetFFTInValue(*SamplePtr, SampleIndex, SamplesToRead);
@@ -327,7 +329,7 @@ float USoundVisComponent::GetFFTInValue(const int16 InSampleValue, const int16 I
 void USoundVisComponent::InitNewDecompressTask(USoundWave* InSoundWaveRef)
 {
 	// Do we already have a valid Runnable? If not, create a new one
-	if (FAudioDecompressWorker::Runnable == NULL)
+	if (FAudioDecompressWorker::Runnable == nullptr)
 	{
 		// Start Timer that watches the DecompressWorker State
 		GetWorld()->GetTimerManager().ClearTimer(AudioDecompressTimer);
@@ -416,7 +418,7 @@ void USoundVisComponent::BP_LoadSoundFileFromHD(const FString InFilePath)
 	LoadSoundFileFromHD(InFilePath);
 }
 
-void USoundVisComponent::BP_LoadAllSoundFileNamesFromHD(bool& bLoaded, const FString InDirectoryPath, const bool bInAbsolutePath, const FString InFileExtension, TArray<FString>& OutSoundFileNamesWithPath, TArray<FString>& OutSoundFileNamesWithoutPath)
+void USoundVisComponent::BP_LoadAllSoundFileNamesFromHD(bool& bLoaded, const FString InDirectoryPath, const bool bInAbsolutePath, const FString InFileExtension, TArray<FString>& OutSoundFileNamesWithPath, TArray<FString>& OutSoundFileNamesWithoutPath) const
 {
 	FString FinalPath = InDirectoryPath;
 
@@ -425,7 +427,7 @@ void USoundVisComponent::BP_LoadAllSoundFileNamesFromHD(bool& bLoaded, const FSt
 		FinalPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir()) + InDirectoryPath;
 	}
 
-	TArray<FString> DirectoriesToSkip;
+	const TArray<FString> DirectoriesToSkip;
 
 	IPlatformFile &PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	FLocalTimestampDirectoryVisitor Visitor(PlatformFile, DirectoriesToSkip, DirectoriesToSkip, false);
@@ -584,12 +586,12 @@ void USoundVisComponent::BP_ResumeCalculatingFrequencySpectrum()
 	}
 }
 
-bool USoundVisComponent::IsPlayerPlaying()
+bool USoundVisComponent::IsPlayerPlaying() const
 {
 	return (bSoundPlaying && !bSoundPaused);
 }
 
-bool USoundVisComponent::IsPlayerPaused()
+bool USoundVisComponent::IsPlayerPaused() const
 {
 	UWorld* World = GetWorld();
 
@@ -601,7 +603,7 @@ bool USoundVisComponent::IsPlayerPaused()
 	return false;
 }
 
-float USoundVisComponent::GetCurrentPlayBackTime()
+float USoundVisComponent::GetCurrentPlayBackTime() const
 {
 	UWorld* World = GetWorld();
 
@@ -617,9 +619,9 @@ float USoundVisComponent::GetCurrentPlayBackTime()
 
 void USoundVisComponent::BP_GetSpecificFrequencyValue(USoundWave* InSoundWave, TArray<float> InFrequencies, int32 InWantedFrequency, float& OutFrequencyValue)
 {
-	if (InSoundWave && InFrequencies.Num() > 0 && (int32)(InWantedFrequency * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform()) < InFrequencies.Num())
+	if (InSoundWave && InFrequencies.Num() > 0 && static_cast<int32>(InWantedFrequency * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform()) < InFrequencies.Num())
 	{
-		OutFrequencyValue = InFrequencies[(int32)(InWantedFrequency * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform())];
+		OutFrequencyValue = InFrequencies[static_cast<int32>(InWantedFrequency * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform())];
 	}
 }
 
@@ -636,7 +638,7 @@ void USoundVisComponent::BP_GetAverageBassValue(USoundWave* InSoundWave, TArray<
 	}
 }
 
-void USoundVisComponent::BP_GetAverageFrequencyValueInRange(USoundWave* InSoundWave, TArray<float> InFrequencies, int32 InStartFrequence, int32 InEndFrequence, float& OutAverageFrequency)
+void USoundVisComponent::BP_GetAverageFrequencyValueInRange(USoundWave* InSoundWave, TArray<float> InFrequencies, int32 InStartFrequency, int32 InEndFrequency, float& OutAverageFrequency)
 {
 	// Init the Return Value
 	OutAverageFrequency = 0.0f;
@@ -644,11 +646,11 @@ void USoundVisComponent::BP_GetAverageFrequencyValueInRange(USoundWave* InSoundW
 	if (InSoundWave == nullptr)	
 		return;
 
-	if (InStartFrequence >= InEndFrequence || InStartFrequence < 0 || InEndFrequence > 22000) 
+	if (InStartFrequency >= InEndFrequency || InStartFrequency < 0 || InEndFrequency > 22000) 
 		return;
 
-	int32 FStart = (int32)(InStartFrequence  * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform());
-	int32 FEnd = (int32)(InEndFrequence * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform());
+	const int32 FStart = static_cast<int32>(InStartFrequency * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform());
+	const int32 FEnd = static_cast<int32>(InEndFrequency * InFrequencies.Num() * 2 / InSoundWave->GetSampleRateForCurrentPlatform());
 
 	if (FStart < 0 || FEnd >= InFrequencies.Num())
 		return;

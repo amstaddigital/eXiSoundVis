@@ -1,6 +1,5 @@
 
 #include "eXiSoundVis.h" 
-#include "eXiSoundVisPrivatePCH.h"
 
 // Log Category
 DEFINE_LOG_CATEGORY(LogeXiSoundVis);

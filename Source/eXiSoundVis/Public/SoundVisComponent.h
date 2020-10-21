@@ -49,6 +49,7 @@ class EXISOUNDVIS_API USoundVisComponent : public UActorComponent
 private:
 
 	// Reference to the SoundWave we are decompressing
+	UPROPERTY()
 	USoundWave* CompressedSoundWaveRef;
 
 	/// Blueprint Exposed Variables
@@ -102,6 +103,7 @@ public:
 private:
 
 	// The CurrentSoundData is only valid if the AudioPlayer is paused or running!
+	UPROPERTY()
 	USoundWave* CurrentSoundData;
 
 	// The CurrentSegmentLength is only valid if the AudioPlayer is pause or running
@@ -137,7 +139,7 @@ public:
 	void LoadSoundFileFromHD(const FString& InFilePath);
 
 	// Function to fill in the RawFile sound data into the USoundWave object
-	bool FillSoundWaveInfo(class USoundWave* InSoundWave, TArray<uint8>* InRawFile);
+	static bool FillSoundWaveInfo(class USoundWave* InSoundWave, TArray<uint8>* InRawFile);
 
 	/// Function to decompress the compressed Data that comes with the .ogg file
 
@@ -150,7 +152,7 @@ public:
 	/// Helper Functions
 
 	// Function used to get a better value for the FFT. Uses Hann Window
-	float GetFFTInValue(const int16 InSampleValue, const int16 InSampleIndex, const int16 InSampleCount);
+	static float GetFFTInValue(const int16 InSampleValue, const int16 InSampleIndex, const int16 InSampleCount);
 
 	// Function to Start a new DecompressTask
 	void InitNewDecompressTask(USoundWave* InSoundWaveRef);
@@ -184,12 +186,12 @@ public:
 	*
 	*/
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Load Sound File Names"), Category = "SoundVis | SoundFile")
-		void BP_LoadAllSoundFileNamesFromHD(bool& bLoaded, const FString InDirectoryPath, const bool bInAbsolutePath, const FString InFileExtension, TArray<FString>& OutSoundFileNamesWithPath, TArray<FString>& OutSoundFileNamesWithoutPath);
+		void BP_LoadAllSoundFileNamesFromHD(bool& bLoaded, const FString InDirectoryPath, const bool bInAbsolutePath, const FString InFileExtension, TArray<FString>& OutSoundFileNamesWithPath, TArray<FString>& OutSoundFileNamesWithoutPath) const;
 
 	/**
 	* Will call the CalculateFrequencySpectrum function from BP Side
 	*
-	* @param	InSoundWave		SoundWave that gets analyzed
+	* @param	InSoundWaveRef	SoundWave that gets analyzed
 	* @param	InStartTime		The StartPoint of the TimeWindow we want to analyze
 	* @param	InDuration		The length of the TimeWindow we want to analyze
 	* @param	OutFrequencies	Array of float values for x Frequencies from 0 to 22000
@@ -236,7 +238,7 @@ public:
 	* @return True if playing
 	*/
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Is Player Playing"), Category = "SoundVis | SoundPlayer")
-		bool IsPlayerPlaying();
+		bool IsPlayerPlaying() const;
 
 	/**
 	* Returns if the Player is currently paused or not
@@ -244,7 +246,7 @@ public:
 	* @return True if paused
 	*/
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Is Player Paused"), Category = "SoundVis | SoundPlayer")
-		bool IsPlayerPaused();
+		bool IsPlayerPaused() const;
 
 	/**
 	* Return the current PlayBack Time of the Sound Player Timer
@@ -252,7 +254,7 @@ public:
 	* @return Current PlayBack Time
 	*/
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Current Playback Time"), Category = "SoundVis | SoundPlayer")
-		float GetCurrentPlayBackTime();
+		float GetCurrentPlayBackTime() const;
 
 	/// Frequency Data Functions
 
@@ -301,5 +303,5 @@ public:
 	*
 	*/
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Average Freq Value In Range"), Category = "SoundVis | Frequency Values")
-		static void BP_GetAverageFrequencyValueInRange(USoundWave* InSoundWave, TArray<float> InFrequencies, int32 InStartFrequence, int32 InEndFrequence, float& OutAverageFrequency);
+		static void BP_GetAverageFrequencyValueInRange(USoundWave* InSoundWave, TArray<float> InFrequencies, int32 InStartFrequency, int32 InEndFrequency, float& OutAverageFrequency);
 };

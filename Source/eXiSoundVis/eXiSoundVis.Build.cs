@@ -6,6 +6,7 @@ public class eXiSoundVis : ModuleRules
 	public eXiSoundVis(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		bEnforceIWYU = true;
         DefaultBuildSettings = BuildSettingsVersion.V2;
 
         PublicIncludePaths.AddRange(new string[] {

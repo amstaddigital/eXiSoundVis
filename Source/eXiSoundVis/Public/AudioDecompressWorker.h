@@ -52,10 +52,10 @@ public:
 	static void ShutdownWorker();
 
 	// Start FRunnable Interface
-	virtual bool Init();
-	virtual uint32 Run();
-	virtual void Stop();
-	virtual void Exit();
+	virtual bool Init() override;
+	virtual uint32 Run() override;
+	virtual void Stop() override;
+	virtual void Exit() override;
 	// End FRunnable Interface
 
 	// Make sure Thread completed
